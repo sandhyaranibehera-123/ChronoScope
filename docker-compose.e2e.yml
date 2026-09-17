@@ -1,0 +1,8 @@
+# E2E overlay -- app services added per phase
+# Usage: docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d
+name: chronoscope
+
+services:
+  # App services will be added here as phases are implemented
+  # Phase 4: worker, projection-worker
+  # Phase 5: rebuild-controller

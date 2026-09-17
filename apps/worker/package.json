@@ -1,0 +1,22 @@
+{
+  "name": "@chronoscope/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@chronoscope/contracts": "*",
+    "@chronoscope/database": "*",
+    "@chronoscope/observability": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}

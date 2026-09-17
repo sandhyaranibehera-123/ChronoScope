@@ -1,0 +1,22 @@
+{
+  "name": "@chronoscope/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx src/migrations.ts"
+  },
+  "dependencies": {
+    "mysql2": "^3.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "tsx": "^4.0.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^2.0.0"
+  }
+}

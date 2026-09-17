@@ -1,0 +1,66 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Build output ──────────────────────────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# ── TypeScript ────────────────────────────────────────────────────────────────
+*.tsbuildinfo
+*.d.ts.map
+
+# ── Environment ───────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+# .env.example is intentionally NOT ignored -- it is committed as documentation
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ── Testing & Coverage ────────────────────────────────────────────────────────
+coverage/
+.nyc_output/
+*.lcov
+
+# ── Docker volumes (local bind-mount state) ───────────────────────────────────
+mysql_data/
+redis_data/
+mongo_data/
+kafka_data/
+rabbitmq_data/
+nats_data/
+minio_data/
+
+# ── OS artifacts ──────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+*.pid
+*.pid.lock
+.cache/
+tmp/
+temp/

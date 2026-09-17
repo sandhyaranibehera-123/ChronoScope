@@ -1,0 +1,31 @@
+{
+  "name": "chronoscope",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CHRONOSCOPE — deterministic distributed-systems laboratory",
+  "engines": { "node": ">=24.0.0", "npm": ">=10.0.0" },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "tsc -b && npm run build --workspace=apps/web",
+    "test": "vitest run --reporter=verbose",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  }
+}
