@@ -3,6 +3,84 @@
 name: chronoscope
 
 services:
-  # App services will be added here as phases are implemented
-  # Phase 4: worker, projection-worker
-  # Phase 5: rebuild-controller
+  worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/worker/Dockerfile
+    container_name: chronoscope-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-chronoscope_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chronoscope_app_secret}
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chronoscope-net
+
+  projection-worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/projection-worker/Dockerfile
+    container_name: chronoscope-projection-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-chronoscope_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chronoscope_app_secret}
+      MONGO_URL: mongodb://${MONGO_ROOT_USERNAME:-chronoscope_mongo_root}:${MONGO_ROOT_PASSWORD:-chronoscope_mongo_secret}@mongo:27017/chronoscope_read?authSource=admin
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - chronoscope-net
+
+  replay-worker:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/replay-worker/Dockerfile
+    container_name: chronoscope-replay-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-chronoscope_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chronoscope_app_secret}
+      REPLAY_WORKER_PORT: 50051
+    ports:
+      - '50051:50051'
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - chronoscope-net
+
+  chaos-agent:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/chaos-agent/Dockerfile
+    container_name: chronoscope-chaos-agent
+    profiles:
+      - chaos-agent
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      CHAOS_MODE: 'true'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - chronoscope-net

@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.github
+*.log
+*.tsbuildinfo
+.env
+.env.*
+.DS_Store
+coverage
+.turbo
+scratch

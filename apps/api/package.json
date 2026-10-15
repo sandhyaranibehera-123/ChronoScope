@@ -11,7 +11,11 @@
   },
   "dependencies": {
     "@chronoscope/contracts": "*",
+    "@chronoscope/domain": "*",
     "@chronoscope/database": "*",
+    "@chronoscope/read-store": "*",
+    "@chronoscope/replay-engine": "*",
+    "@chronoscope/chaos": "*",
     "@chronoscope/observability": "*",
     "fastify": "^5.0.0",
     "@fastify/helmet": "^12.0.0",

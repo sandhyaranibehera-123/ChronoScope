@@ -5,15 +5,25 @@
     "rootDir": "./src",
     "composite": true
   },
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "references": [
     {
       "path": "../../packages/contracts"
     },
     {
       "path": "../../packages/database"
+    },
+    {
+      "path": "../../packages/read-store"
+    },
+    {
+      "path": "../../packages/messaging"
+    },
+    {
+      "path": "../../packages/replay-engine"
+    },
+    {
+      "path": "../../packages/chaos"
     }
   ]
 }

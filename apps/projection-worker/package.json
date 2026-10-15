@@ -1,0 +1,23 @@
+{
+  "name": "@chronoscope/projection-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@chronoscope/database": "*",
+    "@chronoscope/messaging": "*",
+    "@chronoscope/observability": "*",
+    "@chronoscope/read-store": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  }
+}

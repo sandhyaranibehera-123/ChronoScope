@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "description": "CHRONOSCOPE — deterministic distributed-systems laboratory",
-  "engines": { "node": ">=24.0.0", "npm": ">=10.0.0" },
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.0.0"
+  },
   "workspaces": [
     "packages/*",
     "apps/*"
@@ -20,6 +23,8 @@
     "typecheck": "tsc -b"
   },
   "devDependencies": {
+    "@testcontainers/mongodb": "^10.28.0",
+    "@types/amqplib": "^0.10.8",
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -27,5 +32,10 @@
     "prettier": "^3.0.0",
     "typescript": "^5.6.0",
     "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "amqplib": "^2.2.0",
+    "kafkajs": "2.2.4",
+    "mongodb": "6.10.0"
   }
 }

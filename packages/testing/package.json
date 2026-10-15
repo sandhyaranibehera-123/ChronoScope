@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@testcontainers/mysql": "^10.13.0"
+    "@testcontainers/mysql": "^10.13.0",
+    "@testcontainers/mongodb": "^10.28.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

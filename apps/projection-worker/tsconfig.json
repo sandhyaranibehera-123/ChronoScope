@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "references": [
+    { "path": "../../packages/database" },
+    { "path": "../../packages/messaging" },
+    { "path": "../../packages/observability" },
+    { "path": "../../packages/read-store" }
+  ],
+  "include": ["src/**/*.ts"]
+}

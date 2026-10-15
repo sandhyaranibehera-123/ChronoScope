@@ -11,6 +11,7 @@
     "migrate": "tsx src/migrations.ts"
   },
   "dependencies": {
+    "@chronoscope/domain": "*",
     "mysql2": "^3.11.0"
   },
   "devDependencies": {

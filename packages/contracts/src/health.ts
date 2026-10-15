@@ -37,3 +37,15 @@ export const readyWriteResponseSchema = z.object({
   }),
 });
 export type ReadyWriteResponse = z.infer<typeof readyWriteResponseSchema>;
+
+/**
+ * GET /health/ready/read — MongoDB only (Phase 4).
+ * Probes read-side query model and projection store readiness.
+ */
+export const readyReadResponseSchema = z.object({
+  status: z.enum(['ready', 'not_ready']),
+  checks: z.object({
+    mongo: dependencyCheckSchema,
+  }),
+});
+export type ReadyReadResponse = z.infer<typeof readyReadResponseSchema>;

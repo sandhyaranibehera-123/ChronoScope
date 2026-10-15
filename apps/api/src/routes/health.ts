@@ -18,11 +18,30 @@ function readPackageVersion(): string {
   }
 }
 
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  operationName: string,
+): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`${operationName} check timed out after ${timeoutMs}ms`)),
+      timeoutMs,
+    );
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function checkMysql(): Promise<DependencyCheck> {
   const start = performance.now();
   try {
     const pool = getMysqlPool();
-    await pool.query('SELECT 1');
+    await withTimeout(pool.query('SELECT 1'), 1500, 'MySQL');
     return { status: 'ok', latencyMs: performance.now() - start };
   } catch (error) {
     return {
@@ -37,10 +56,13 @@ async function checkRedis(): Promise<DependencyCheck> {
   const start = performance.now();
   try {
     const client = getRedisClient();
-    if (!client.isOpen) {
-      await client.connect();
-    }
-    await client.ping();
+    const run = async () => {
+      if (!client.isOpen) {
+        await client.connect();
+      }
+      await client.ping();
+    };
+    await withTimeout(run(), 1500, 'Redis');
     return { status: 'ok', latencyMs: performance.now() - start };
   } catch (error) {
     return {
@@ -51,17 +73,31 @@ async function checkRedis(): Promise<DependencyCheck> {
   }
 }
 
+async function checkMongo(): Promise<DependencyCheck> {
+  try {
+    const { checkMongoReadiness } = await import('@chronoscope/read-store');
+    const res = await checkMongoReadiness(undefined, 1500);
+    return {
+      status: res.ok ? 'ok' : 'fail',
+      latencyMs: res.latencyMs,
+      error: res.error,
+    };
+  } catch (error) {
+    return {
+      status: 'fail',
+      latencyMs: 0,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 /**
  * Health routes — deliberately split (rule: component-specific readiness).
  *
  * /health/live         — process is up, no dependency checks.
  * /health/version       — build metadata.
  * /health/ready/write   — MySQL + Redis only, the write-path dependencies.
- *                         MongoDB's own /health/ready/read arrives Phase 4;
- *                         folding it in here now would make a future Mongo
- *                         outage look identical to a MySQL outage, which is
- *                         exactly the distinction this project's chaos/
- *                         recovery design (Phase 11/12) depends on.
+ * /health/ready/read    — MongoDB only, the read/projection path dependencies (Phase 4).
  */
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
   app.get('/health/live', async () => ({ status: 'live' as const }));
@@ -79,5 +115,14 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
       reply.status(503);
     }
     return { status, checks: { mysql, redis } };
+  });
+
+  app.get('/health/ready/read', async (_request, reply) => {
+    const mongo = await checkMongo();
+    const status = mongo.status === 'ok' ? 'ready' : 'not_ready';
+    if (status === 'not_ready') {
+      reply.status(503);
+    }
+    return { status, checks: { mongo } };
   });
 }

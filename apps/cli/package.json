@@ -14,6 +14,10 @@
   "dependencies": {
     "@chronoscope/contracts": "*",
     "@chronoscope/database": "*",
+    "@chronoscope/read-store": "*",
+    "@chronoscope/messaging": "*",
+    "@chronoscope/replay-engine": "*",
+    "@chronoscope/chaos": "*",
     "commander": "^12.0.0",
     "jsonwebtoken": "^9.0.0",
     "mysql2": "^3.11.0",

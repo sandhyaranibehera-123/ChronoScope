@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package chronoscope.replay.v1;
+
+service ReplayWorkerService {
+  rpc ExecuteReplay (ExecuteReplayRequest) returns (ExecuteReplayResponse);
+  rpc CheckHealth (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message ExecuteReplayRequest {
+  string timeline_id = 1;
+  string aggregate_id = 2;
+  string aggregate_type = 3;
+  int64 target_sequence = 4;
+  string mode = 5; // "LIVE_REPLAY" or "COUNTERFACTUAL_REPLAY"
+  string scenario_seed = 6;
+  string correlation_id = 7;
+  string request_id = 8;
+  bool use_snapshot = 9;
+  string scenario_inputs_json = 10;
+}
+
+message ExecuteReplayResponse {
+  string execution_id = 1;
+  string state_hash = 2;
+  string live_state_hash = 3;
+  bool hash_parity_matched = 4;
+  int64 events_replayed = 5;
+  string summary = 6;
+  string mode = 7;
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  string status = 1; // "SERVING" or "NOT_SERVING"
+}

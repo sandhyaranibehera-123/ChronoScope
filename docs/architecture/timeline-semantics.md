@@ -1,6 +1,6 @@
 # Timeline Semantics
 
-*Stub — the full recursive-CTE implementation and nested/sibling-branch test suite land in Phase 7. The formal definitions below are frozen now so Phase 7 implements against a spec, not a blank page.*
+This document details the formal semantics and implementation guarantees for zero-copy timeline branching, recursive ancestry resolution, sibling isolation, counterfactual replay, and CQRS read-store projection bootstrap (System Guarantees Rules 6, 12, 13 & ADR-010). Fully implemented in Phase 7.
 
 ## Branches never copy parent history
 

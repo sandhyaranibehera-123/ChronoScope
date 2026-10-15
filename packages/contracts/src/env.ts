@@ -28,6 +28,15 @@ export const envSchema = z.object({
   // MongoDB — read side (rule: optional until packages/read-store exists, Phase 4)
   MONGO_URL: z.string().min(1).optional(),
 
+  // RabbitMQ — work queue (Phase 9)
+  RABBITMQ_URL: z.string().min(1).default('amqp://guest:guest@localhost:5672'),
+
+  // gRPC Replay Worker (Phase 9)
+  REPLAY_WORKER_GRPC_URL: z.string().min(1).default('localhost:50051'),
+
+  // NATS — Control plane transport (Phase 10)
+  NATS_URL: z.string().min(1).default('nats://localhost:4222'),
+
   // Dev-mode auth (rule 1.7 of the plan — never a public token-grant endpoint)
   DEV_AUTH_MODE: z
     .enum(['true', 'false'])
@@ -35,6 +44,12 @@ export const envSchema = z.object({
     .transform((v) => v === 'true'),
   JWT_SECRET: z.string().min(16).default('chronoscope-dev-secret-change-me-24chars'),
   JWT_EXPIRY: z.string().min(1).default('15m'),
+
+  // Chaos mode (Rule 21 — required for fault injection)
+  CHAOS_MODE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;

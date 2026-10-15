@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*"],
+  "references": [
+    { "path": "../contracts" },
+    { "path": "../domain" },
+    { "path": "../events" },
+    { "path": "../database" },
+    { "path": "../read-store" },
+    { "path": "../observability" }
+  ]
+}

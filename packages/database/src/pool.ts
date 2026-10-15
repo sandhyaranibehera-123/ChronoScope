@@ -50,4 +50,26 @@ export function createPool(config: PoolConfig): mysql.Pool {
   return pool;
 }
 
+let sharedPool: mysql.Pool | undefined;
+
+export function getMysqlPool(): mysql.Pool {
+  if (!sharedPool) {
+    sharedPool = createPool({
+      host: process.env['MYSQL_HOST'] ?? 'localhost',
+      port: Number(process.env['MYSQL_PORT'] ?? 3306),
+      user: process.env['MYSQL_USER'] ?? 'chronoscope_app',
+      password: process.env['MYSQL_PASSWORD'] ?? 'chronoscope_app_secret',
+      database: process.env['MYSQL_DATABASE'] ?? 'chronoscope_core',
+    });
+  }
+  return sharedPool;
+}
+
+export async function closeMysqlPool(): Promise<void> {
+  if (sharedPool) {
+    await sharedPool.end();
+    sharedPool = undefined;
+  }
+}
+
 export type { Pool, PoolConnection, RowDataPacket, ResultSetHeader } from 'mysql2/promise';

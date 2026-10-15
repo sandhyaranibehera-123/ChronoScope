@@ -2,11 +2,20 @@
   "files": [],
   "references": [
     { "path": "./packages/contracts" },
+    { "path": "./packages/domain" },
+    { "path": "./packages/events" },
     { "path": "./packages/database" },
+    { "path": "./packages/read-store" },
+    { "path": "./packages/messaging" },
     { "path": "./packages/observability" },
     { "path": "./packages/testing" },
+    { "path": "./packages/replay-engine" },
+    { "path": "./packages/chaos" },
     { "path": "./apps/api" },
     { "path": "./apps/cli" },
-    { "path": "./apps/worker" }
+    { "path": "./apps/worker" },
+    { "path": "./apps/projection-worker" },
+    { "path": "./apps/replay-worker" },
+    { "path": "./apps/chaos-agent" }
   ]
 }

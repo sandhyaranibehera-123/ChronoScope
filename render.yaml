@@ -1,0 +1,99 @@
+# ==============================================================================
+# CHRONOSCOPE Render Cloud Blueprint Specification
+# Multi-Service Polyglot Deployment (MySQL, MongoDB, Kafka, Node microservices)
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Authoritative API Service (Fastify, Port 3000)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: chronoscope-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: oregon
+    healthCheckPath: /health/liveness
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        value: '3306'
+      - key: MYSQL_DATABASE
+        value: chronoscope_core
+      - key: MYSQL_USER
+        value: chronoscope_app
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DATABASE
+        value: chronoscope_read
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CHAOS_MODE
+        value: 'false'
+
+  # ----------------------------------------------------------------------------
+  # 2. Transactional Outbox Publisher & Job Worker
+  # ----------------------------------------------------------------------------
+  - type: worker
+    name: chronoscope-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: node apps/worker/dist/index.js
+    plan: starter
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        value: '3306'
+      - key: MYSQL_DATABASE
+        value: chronoscope_core
+      - key: MYSQL_USER
+        value: chronoscope_app
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: KAFKA_BROKERS
+        sync: false
+      - key: RABBITMQ_URL
+        sync: false
+
+  # ----------------------------------------------------------------------------
+  # 3. CQRS 3-Step Decoupled Projection Worker
+  # ----------------------------------------------------------------------------
+  - type: worker
+    name: chronoscope-projection-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: node apps/projection-worker/dist/index.js
+    plan: starter
+    region: oregon
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        value: '3306'
+      - key: MYSQL_DATABASE
+        value: chronoscope_core
+      - key: MYSQL_USER
+        value: chronoscope_projection_worker
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DATABASE
+        value: chronoscope_read
+      - key: KAFKA_BROKERS
+        sync: false

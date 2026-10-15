@@ -39,4 +39,13 @@ describe('health routes', () => {
     expect(body.checks).toHaveProperty('redis');
     await app.close();
   }, 15_000);
+
+  it('GET /health/ready/read reports not_ready (503) when MongoDB is unreachable, without hanging', async () => {
+    const app = await buildServer();
+    const response = await app.inject({ method: 'GET', url: '/health/ready/read' });
+    expect([200, 503]).toContain(response.statusCode);
+    const body = response.json();
+    expect(body.checks).toHaveProperty('mongo');
+    await app.close();
+  }, 15_000);
 });

@@ -9,7 +9,18 @@ let client: RedisClientType | undefined;
  */
 export function getRedisClient(): RedisClientType {
   if (!client) {
-    client = createClient({ url: getEnv().REDIS_URL });
+    client = createClient({
+      url: getEnv().REDIS_URL,
+      socket: {
+        connectTimeout: 1500,
+        reconnectStrategy: (retries: number) => {
+          if (retries > 1) {
+            return false;
+          }
+          return 50;
+        },
+      },
+    });
     client.on('error', () => {
       // swallowed here; callers (e.g. the health check) observe failures
       // via their own operation timing out or rejecting, not via this handler
@@ -20,7 +31,16 @@ export function getRedisClient(): RedisClientType {
 
 export async function closeRedisClient(): Promise<void> {
   if (client) {
-    await client.quit();
-    client = undefined;
+    try {
+      if (client.isOpen) {
+        await client.quit();
+      } else {
+        await client.disconnect();
+      }
+    } catch {
+      // best-effort cleanup
+    } finally {
+      client = undefined;
+    }
   }
 }

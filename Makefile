@@ -74,10 +74,11 @@ benchmark: ## Run performance benchmarks (Phase 13)
 	@echo "Benchmarks available from Phase 13"
 
 experiment: ## Run an experiment (Phase 11)
-	@echo "Experiments available from Phase 11"
+	npx tsx apps/cli/src/index.ts experiment list
 
 chaos: ## Run chaos scenarios (Phase 11)
-	@echo "Chaos scenarios available from Phase 11"
+	npm test tests/golden/golden-chaos-engine.test.ts
+
 
 recovery: ## Run recovery test suite (Phase 12)
 	@echo "Recovery tests available from Phase 12"

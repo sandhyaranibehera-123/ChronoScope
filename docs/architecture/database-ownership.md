@@ -4,35 +4,35 @@ Two engines, each earning its place for a specific reason — see `docs/spec/sys
 
 ## Schemas
 
-- **MySQL** `chronoscope_core`: `schema_migrations`, `timelines`, `timeline_position_seq`, `events`, `system_events`, `aggregate_versions`, `aggregate_state`, `outbox`, `snapshots`, `snapshot_sets`, `users`, `refresh_sessions`. *(Only `schema_migrations` exists as of Phase 1 — the rest land in Phase 3/6/14.)*
-- **MySQL** `chronoscope_ops`: `command_deduplication`, `jobs`, `job_outbox`, `worker_controls`, `control_commands`, `executions`, `scenario_inputs`, `experiments`, `experiment_runs`, `experiment_invariants`, `audit_log`, `inbox`, `projection_checkpoints`, `projection_metadata`, `projection_rebuild_runs`, `projection_rebuild_cutoffs`. *(Created empty by migration `0001_databases.sql`; tables land per-phase — Phase 4/5/9/10/11.)*
-- **MongoDB** `chronoscope_read`: collections `order_summary`, `payment_summary`, `shipment_summary` — one document per `(timeline_id, aggregate_id)` pair, never per `aggregate_id` alone. *(Does not exist until Phase 4 — `packages/read-store` is created then.)*
+- **MySQL** `chronoscope_core`: `schema_migrations`, `timelines`, `timeline_position_seq`, `events`, `system_events`, `aggregate_versions`, `aggregate_state`, `outbox`, `snapshots`, `snapshot_sets`, `users`, `refresh_sessions`. _(Only `schema_migrations` exists as of Phase 1 — the rest land in Phase 3/6/14.)_
+- **MySQL** `chronoscope_ops`: `command_deduplication`, `jobs`, `job_outbox`, `worker_controls`, `control_commands`, `executions`, `scenario_inputs`, `experiments`, `experiment_runs`, `experiment_invariants`, `audit_log`, `inbox`, `projection_checkpoints`, `projection_metadata`, `projection_rebuild_runs`, `projection_rebuild_cutoffs`. _(Created empty by migration `0001_databases.sql`; tables land per-phase — Phase 4/5/9/10/11.)_
+- **MongoDB** `chronoscope_read`: collections `order_summary`, `payment_summary`, `shipment_summary` — one document per `(timeline_id, aggregate_id)` pair, never per `aggregate_id` alone. _(Does not exist until Phase 4 — `packages/read-store` is created then.)_
 
 ## MySQL role matrix
 
-*(Roles themselves are provisioned in Phase 14 — Phase 1 uses `root` for migrations and a single `chronoscope_app` user for the health check, documented as a deliberate, honest simplification until role separation is enforced.)*
+_(Roles and triggers are fully provisioned and database-enforced via migration `0014_security_and_roles.sql` and verified in `packages/database/src/__tests__/role-security.test.ts`.)_
 
-| Role | events/system_events | timelines/aggregate_versions/aggregate_state | outbox/job_outbox | timeline_position_seq | `inbox`/`projection_checkpoints` | `projection_metadata`/`projection_rebuild_runs`/`projection_rebuild_cutoffs` | rest of `chronoscope_ops` | DDL |
-|---|---|---|---|---|---|---|---|---|
-| `chronoscope_app` | SELECT, INSERT | SELECT, INSERT, UPDATE | INSERT | INSERT, SELECT | — | — | SELECT, INSERT, UPDATE | — |
-| `chronoscope_projection_worker` | SELECT | SELECT | — | — | SELECT, INSERT, UPDATE | SELECT only | — | — |
-| `chronoscope_rebuild_controller` | SELECT | SELECT | — | — | — | SELECT, INSERT, UPDATE | — | — |
-| `chronoscope_publisher` | — | — | SELECT, UPDATE | — | — | — | — | — |
-| `chronoscope_migrator` | — | — | — | — | — | — | — | DDL |
-| `chronoscope_owner` | * | * | * | * | * | * | * | * |
+| Role                             | events/system_events | timelines/aggregate_versions/aggregate_state | outbox/job_outbox | timeline_position_seq | `inbox`/`projection_checkpoints` | `projection_metadata`/`projection_rebuild_runs`/`projection_rebuild_cutoffs` | rest of `chronoscope_ops` | DDL |
+| -------------------------------- | -------------------- | -------------------------------------------- | ----------------- | --------------------- | -------------------------------- | ---------------------------------------------------------------------------- | ------------------------- | --- |
+| `chronoscope_app`                | SELECT, INSERT       | SELECT, INSERT, UPDATE                       | INSERT            | INSERT, SELECT        | —                                | —                                                                            | SELECT, INSERT, UPDATE    | —   |
+| `chronoscope_projection_worker`  | SELECT               | SELECT                                       | —                 | —                     | SELECT, INSERT, UPDATE           | SELECT only                                                                  | —                         | —   |
+| `chronoscope_rebuild_controller` | SELECT               | SELECT                                       | —                 | —                     | —                                | SELECT, INSERT, UPDATE                                                       | —                         | —   |
+| `chronoscope_publisher`          | —                    | —                                            | SELECT, UPDATE    | —                     | —                                | —                                                                            | —                         | —   |
+| `chronoscope_migrator`           | —                    | —                                            | —                 | —                     | —                                | —                                                                            | —                         | DDL |
+| `chronoscope_owner`              | *                    | *                                            | *                 | *                     | *                                | *                                                                            | *                         | *   |
 
 `chronoscope_projection_worker` and `chronoscope_rebuild_controller` are split specifically so rule 17's "worker may never write `projection_metadata`" is database-enforced, not merely conventional.
 
 ## Read/write ownership matrix
 
-| Component | MySQL read | MySQL write | Mongo read | Mongo write |
-|---|---|---|---|---|
-| API command path | `aggregate_state` | core + command dedup | ✗ | ✗ |
-| Query API | ✗ | ✗ | own read model | ✗ |
-| Projection worker | `timelines`, `events`, `aggregate_versions`, `aggregate_state`, `projection_metadata` (read-only) | `inbox`, `projection_checkpoints` only | own collection | own collection only |
-| Replay worker | core/ops replay inputs | execution/replay metadata | ✗ | ✗ |
-| Rebuild controller/CLI | events/state/timelines + cutoff metadata | `projection_metadata`, `projection_rebuild_runs`, `projection_rebuild_cutoffs` | shadow/target (verify) | shadow + target |
-| Admin/audit | MySQL operational data | audit tables | read only | ✗ |
+| Component              | MySQL read                                                                                        | MySQL write                                                                    | Mongo read             | Mongo write         |
+| ---------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------- | ------------------- |
+| API command path       | `aggregate_state`                                                                                 | core + command dedup                                                           | ✗                      | ✗                   |
+| Query API              | ✗                                                                                                 | ✗                                                                              | own read model         | ✗                   |
+| Projection worker      | `timelines`, `events`, `aggregate_versions`, `aggregate_state`, `projection_metadata` (read-only) | `inbox`, `projection_checkpoints` only                                         | own collection         | own collection only |
+| Replay worker          | core/ops replay inputs                                                                            | execution/replay metadata                                                      | ✗                      | ✗                   |
+| Rebuild controller/CLI | events/state/timelines + cutoff metadata                                                          | `projection_metadata`, `projection_rebuild_runs`, `projection_rebuild_cutoffs` | shadow/target (verify) | shadow + target     |
+| Admin/audit            | MySQL operational data                                                                            | audit tables                                                                   | read only              | ✗                   |
 
 A projection worker reading MySQL history for fork-base-state/lagging-hash reconstruction is a **read-only reconstruction input** — it never transfers business-state authority to the projection worker.
 

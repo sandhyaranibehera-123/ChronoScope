@@ -14,13 +14,23 @@ services:
       MYSQL_MIGRATOR_USER: ${MYSQL_MIGRATOR_USER:-chronoscope_migrator}
       MYSQL_MIGRATOR_PASSWORD: ${MYSQL_MIGRATOR_PASSWORD:-chronoscope_migrator_secret}
     ports:
-      - "3306:3306"
+      - '3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
       - ./infrastructure/docker/mysql/my.cnf:/etc/mysql/conf.d/chronoscope.cnf:ro
       - ./infrastructure/docker/mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-chronoscope_root_secret}"]
+      test:
+        [
+          'CMD',
+          'mysqladmin',
+          'ping',
+          '-h',
+          'localhost',
+          '-u',
+          'root',
+          '-p${MYSQL_ROOT_PASSWORD:-chronoscope_root_secret}',
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -33,11 +43,11 @@ services:
     container_name: chronoscope-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -56,13 +66,13 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-chronoscope_mongo_secret}
       MONGO_INITDB_DATABASE: chronoscope_read
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
     # WiredTiger cache capped at 0.5 GB -- on an 8 GB host the default ~50% grab starves everything else
-    command: ["mongod", "--wiredTigerCacheSizeGB", "0.5"]
+    command: ['mongod', '--wiredTigerCacheSizeGB', '0.5']
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -89,13 +99,13 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_LOG_DIRS: /var/lib/kafka/data
-      CLUSTER_ID: "chronoscope-kafka-cluster-v1"
+      CLUSTER_ID: 'chronoscope-kafka-cluster-v1'
     ports:
-      - "9092:9092"
+      - '9092:9092'
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: ['CMD', 'kafka-broker-api-versions', '--bootstrap-server', 'localhost:9092']
       interval: 15s
       timeout: 10s
       retries: 10
@@ -113,12 +123,12 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - '5672:5672'
+      - '15672:15672'
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -132,14 +142,14 @@ services:
     profiles:
       - nats
     restart: unless-stopped
-    command: ["-js", "-sd", "/data"]
+    command: ['-js', '-sd', '/data']
     ports:
-      - "4222:4222"
-      - "8222:8222"
+      - '4222:4222'
+      - '8222:8222'
     volumes:
       - nats_data:/data
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:8222/healthz']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -157,12 +167,12 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-chronoscope_minio_secret}
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ['CMD', 'mc', 'ready', 'local']
       interval: 10s
       timeout: 5s
       retries: 5

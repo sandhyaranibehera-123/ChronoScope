@@ -12,6 +12,7 @@
   "dependencies": {
     "@chronoscope/contracts": "*",
     "@chronoscope/database": "*",
+    "@chronoscope/messaging": "*",
     "@chronoscope/observability": "*"
   },
   "devDependencies": {
