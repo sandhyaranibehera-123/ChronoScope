@@ -10,6 +10,7 @@ export interface MongoConfig {
 export function getMongoUrl(): string {
   return (
     process.env['MONGO_URL'] ??
+    process.env['MONGO_URI'] ??
     'mongodb://chronoscope_mongo_root:chronoscope_mongo_secret@localhost:27017/chronoscope_read?authSource=admin'
   );
 }
