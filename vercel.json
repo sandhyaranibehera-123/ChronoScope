@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://chronoscope-api.onrender.com/api/:match*"
+      "destination": "https://chronoscope-2sp3.onrender.com/api/:match*"
     },
     {
       "source": "/health/:match*",
-      "destination": "https://chronoscope-api.onrender.com/health/:match*"
+      "destination": "https://chronoscope-2sp3.onrender.com/health/:match*"
     },
     {
       "source": "/(.*)",
