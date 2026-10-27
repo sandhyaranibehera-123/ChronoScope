@@ -101,6 +101,8 @@ async function checkMongo(): Promise<DependencyCheck> {
  */
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
   app.get('/health/live', async () => ({ status: 'live' as const }));
+  app.get('/health/liveness', async () => ({ status: 'live' as const }));
+  app.get('/health', async () => ({ status: 'live' as const }));
 
   app.get('/health/version', async () => ({
     version: readPackageVersion(),
