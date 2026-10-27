@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { computeLatencyMetrics, type MongoLatencyProfileResult } from './types.js';
 import { InMemoryAggregateRepository } from '../repositories/in-memory-aggregate-repository.js';
 import { InMemoryInboxCheckpointManager } from '../projections/inbox-checkpoint-manager.js';
-import { InMemoryOrderSummaryRepository } from '@chronoscope/read-store';
 import {
   ORDER_AGGREGATE_TYPE,
   type OrderState,
@@ -11,8 +10,6 @@ import {
   decideCreateOrder,
   computeStateHash,
 } from '@chronoscope/domain';
-import { InMemoryKafkaBus } from '@chronoscope/messaging';
-import { ProjectionWorker } from '@chronoscope/projection-worker';
 
 export interface MongoLatencyProfilerOptions {
   eventCount?: number;
@@ -36,6 +33,41 @@ export async function runMongoLatencyProfiler(
     timelineId = '00000000-0000-0000-0000-000000000001',
     topic = 'chronoscope.events.orders',
   } = options;
+
+  // Dynamically load downstream projection components at runtime to break circular package dependencies
+  const readStoreMod = '@chronoscope/read-store';
+  const messagingMod = '@chronoscope/messaging';
+  const projectionWorkerMod = '@chronoscope/projection-worker';
+
+  interface ProfilerOrderSummaryRepo {
+    readonly [key: string]: unknown;
+  }
+  interface ProfilerBus {
+    send(
+      topic: string,
+      key: string,
+      payload: unknown,
+      headers?: Record<string, string>,
+    ): Promise<{ topic: string; partition: number; offset: number }>;
+  }
+  interface ProfilerWorker {
+    processMessage(msg: unknown): Promise<void>;
+  }
+
+  const { InMemoryOrderSummaryRepository } = (await import(readStoreMod)) as {
+    InMemoryOrderSummaryRepository: new () => ProfilerOrderSummaryRepo;
+  };
+  const { InMemoryKafkaBus } = (await import(messagingMod)) as {
+    InMemoryKafkaBus: new (partitions: number) => ProfilerBus;
+  };
+  const { ProjectionWorker } = (await import(projectionWorkerMod)) as {
+    ProjectionWorker: new (
+      repo: ProfilerOrderSummaryRepo,
+      inbox: unknown,
+      bus: ProfilerBus,
+      opts?: unknown,
+    ) => ProfilerWorker;
+  };
 
   const orderRepo = new InMemoryAggregateRepository<OrderState>(ORDER_AGGREGATE_TYPE);
   const inboxCheckpoint = new InMemoryInboxCheckpointManager();

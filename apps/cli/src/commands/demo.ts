@@ -21,7 +21,6 @@ import {
 } from '@chronoscope/database';
 import { InMemoryOrderSummaryRepository } from '@chronoscope/read-store';
 import { InMemoryKafkaBus } from '@chronoscope/messaging';
-import { ProjectionWorker } from '@chronoscope/projection-worker';
 import {
   SnapshotManager,
   InMemorySnapshotStorage,
@@ -140,6 +139,18 @@ export async function runDemoCommand(): Promise<void> {
   const orderSummaryRepo = new InMemoryOrderSummaryRepository();
   const inboxCheckpoint = new InMemoryInboxCheckpointManager();
   const bus = new InMemoryKafkaBus(1);
+  const projectionWorkerMod = '@chronoscope/projection-worker';
+  interface DemoWorker {
+    processMessage(msg: unknown): Promise<void>;
+  }
+  const { ProjectionWorker } = (await import(projectionWorkerMod)) as {
+    ProjectionWorker: new (
+      repo: unknown,
+      inbox: unknown,
+      bus: unknown,
+      opts?: unknown,
+    ) => DemoWorker;
+  };
   const worker = new ProjectionWorker(orderSummaryRepo, inboxCheckpoint, bus, {
     projectionName: 'order_summary',
   });

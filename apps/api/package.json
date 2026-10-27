@@ -17,6 +17,7 @@
     "@chronoscope/replay-engine": "*",
     "@chronoscope/chaos": "*",
     "@chronoscope/observability": "*",
+    "@chronoscope/messaging": "*",
     "fastify": "^5.0.0",
     "@fastify/helmet": "^12.0.0",
     "@fastify/cors": "^10.0.0",
