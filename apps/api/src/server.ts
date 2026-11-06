@@ -1,3 +1,6 @@
+import { existsSync, createReadStream, statSync } from 'node:fs';
+import { dirname, join, resolve, extname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { AggregateRepository, OrderState } from '@chronoscope/domain';
 import type {
@@ -132,6 +135,86 @@ export async function buildServer(deps?: ServerDependencies): Promise<FastifyIns
     experimentManager: deps?.experimentManager,
     experimentRunner: deps?.experimentRunner,
   });
+
+  // Serve static web dashboard (built SPA in apps/web/dist)
+  const currentDir = dirname(fileURLToPath(import.meta.url));
+  const candidateDirs = [
+    resolve(process.cwd(), 'apps/web/dist'),
+    resolve(process.cwd(), 'web/dist'),
+    resolve(currentDir, '../../web/dist'),
+    resolve(currentDir, '../../../apps/web/dist'),
+  ];
+  const webDistDir = candidateDirs.find((dir) => existsSync(join(dir, 'index.html')));
+
+  const MIME_TYPES: Record<string, string> = {
+    '.html': 'text/html; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.mjs': 'application/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.map': 'application/json; charset=utf-8',
+    '.txt': 'text/plain; charset=utf-8',
+  };
+
+  if (webDistDir) {
+    const indexPath = join(webDistDir, 'index.html');
+
+    app.get('/', async (_req, reply) => {
+      reply.type('text/html; charset=utf-8');
+      return reply.send(createReadStream(indexPath));
+    });
+
+    app.setNotFoundHandler(async (request, reply) => {
+      if (
+        request.url.startsWith('/api') ||
+        request.url.startsWith('/health') ||
+        request.method !== 'GET'
+      ) {
+        return reply.status(404).send({
+          statusCode: 404,
+          error: 'Not Found',
+          message: `Route ${request.method}:${request.url} not found`,
+        });
+      }
+
+      try {
+        const rawPath = request.url.split('?')[0] ?? '/';
+        const safePath = join(webDistDir, rawPath.replace(/^\/+/, ''));
+        if (existsSync(safePath) && statSync(safePath).isFile()) {
+          const ext = extname(safePath).toLowerCase();
+          const mime = MIME_TYPES[ext] ?? 'application/octet-stream';
+          reply.type(mime);
+          if (rawPath.startsWith('/assets/')) {
+            reply.header('Cache-Control', 'public, max-age=31536000, immutable');
+          }
+          return reply.send(createReadStream(safePath));
+        }
+      } catch {
+        // Fall back to index.html for client-side routing
+      }
+
+      reply.type('text/html; charset=utf-8');
+      return reply.send(createReadStream(indexPath));
+    });
+  } else {
+    app.get('/', async (_req, reply) => {
+      return reply.send({
+        name: 'CHRONOSCOPE Distributed Laboratory API',
+        status: 'online',
+        version: '0.1.0',
+        docs: '/openapi.json',
+        health: '/health/version',
+      });
+    });
+  }
 
   return app;
 }

@@ -12,7 +12,7 @@ A deterministic distributed-systems laboratory: event sourcing, CQRS, determinis
 - **Redis** — rate limiting / cache / heartbeat only, never correctness. **MinIO** — artifact storage.
 - **No Kubernetes** — Docker Compose is sufficient; see `docs/adr/014-why-not-kubernetes.md`.
 
-Full rationale: `docs/spec/system-guarantees.md`, `docs/architecture/`, `docs/adr/`.
+Full rationale & documentation: [`PROJECT_DOCUMENTATION.md`](file:///Users/sandhyaranibehera/Main_Project/Chronoscope/PROJECT_DOCUMENTATION.md), `docs/spec/system-guarantees.md`, `docs/architecture/`, `docs/adr/`.
 
 ## Getting started
 

@@ -1,305 +1,291 @@
 import { useState } from 'react';
+import { fetchTimelineDiff, type TimelineDiffResult } from '../lib/api-client';
 
-export interface TimelineDiffPageProps {
-  onBackToHealth?: () => void;
-}
-
-export function TimelineDiffPage({ onBackToHealth }: TimelineDiffPageProps) {
+export function TimelineDiffPage() {
   const [baseTimelineId, setBaseTimelineId] = useState('00000000-0000-0000-0000-000000000001');
   const [branchTimelineId, setBranchTimelineId] = useState('branch-counterfactual');
-  const [aggregateId, setAggregateId] = useState('order-demo-100');
-
-  // Simulated / demonstration diff state
-  const [diffResult, _setDiffResult] = useState<{
-    commonAncestor: string;
-    forkPosition: number;
-    hashesMatch: boolean;
-    stateA: Record<string, unknown>;
-    stateB: Record<string, unknown>;
-    divergenceReason: string;
-    eventsA: Array<{ eventId: string; type: string; pos: number }>;
-    eventsB: Array<{ eventId: string; type: string; pos: number }>;
-  } | null>({
+  const [aggregateId, setAggregateId] = useState('ord-demo-100');
+  const [isLoading, setIsLoading] = useState(false);
+  const [diffResult, setDiffResult] = useState<TimelineDiffResult>({
     commonAncestor: 'MAIN',
     forkPosition: 2,
     hashesMatch: false,
-    stateA: {
+    baseState: {
       status: 'PAID',
-      items: [{ sku: 'SKU-LAPTOP', quantity: 1, amountMinor: 50000 }],
+      items: [{ sku: 'SKU-LAPTOP-DEV', quantity: 1, amountMinor: 50000 }],
       totalAmountMinor: 50000,
+      currency: 'USD',
+      stateHash: '7a19c3b889e0fa41d7c2b51239aa8e1049c682390a18bc01d94827bbca801824',
     },
-    stateB: {
+    branchState: {
       status: 'CANCELLED',
-      items: [{ sku: 'SKU-LAPTOP', quantity: 1, amountMinor: 50000 }],
+      items: [{ sku: 'SKU-LAPTOP-DEV', quantity: 1, amountMinor: 50000 }],
       totalAmountMinor: 50000,
+      currency: 'USD',
+      stateHash: '8f0012bc5564de0911ab6789cda109841805bbca39109acbc390192809feca81',
     },
     divergenceReason:
       "ScenarioInput 'ForcePaymentFailure' induced payment failure on branch, triggering backward saga compensation.",
-    eventsA: [
+    baseEvents: [
       { eventId: 'ev-main-3', type: 'OrderPaid', pos: 3 },
       { eventId: 'ev-main-4', type: 'OrderShipped', pos: 4 },
     ],
-    eventsB: [{ eventId: 'ev-branch-1', type: 'OrderCancelled', pos: 5 }],
+    branchEvents: [
+      { eventId: 'ev-branch-1', type: 'PaymentFailed', pos: 3 },
+      { eventId: 'ev-branch-2', type: 'InventoryReleased', pos: 4 },
+      { eventId: 'ev-branch-3', type: 'OrderCancelled', pos: 5 },
+    ],
   });
 
+  const handleCompare = async () => {
+    setIsLoading(true);
+    const res = await fetchTimelineDiff(baseTimelineId, branchTimelineId, aggregateId);
+    setDiffResult(res);
+    setIsLoading(false);
+  };
+
   return (
-    <div
-      style={{
-        fontFamily: 'system-ui, sans-serif',
-        padding: '2rem',
-        maxWidth: '1200px',
-        margin: '0 auto',
-      }}
-    >
-      <header
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '2rem',
-        }}
-      >
+    <div>
+      <div className="view-header">
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>
-            🌿 Timeline DAG & Counterfactual Diff (Phase 7)
-          </h1>
-          <p style={{ margin: '0.25rem 0 0', color: '#6b7280' }}>
-            Zero-copy branching, deterministic historical playback, and causal state comparison.
+          <h1 className="view-title">🌿 Timeline DAG & Counterfactual Diff Studio</h1>
+          <p className="view-subtitle">
+            Zero-copy timeline branching, ancestor traversal via recursive SQL, and counterfactual
+            state diffing (Phase 7, Rules 6, 9, 12, 13).
           </p>
         </div>
-        {onBackToHealth && (
-          <button
-            onClick={onBackToHealth}
-            style={{
-              padding: '0.5rem 1rem',
-              border: '1px solid #d1d5db',
-              borderRadius: '0.375rem',
-              background: '#fff',
-              cursor: 'pointer',
-            }}
-          >
-            ← System Health
-          </button>
-        )}
-      </header>
+      </div>
 
-      {/* Control Bar */}
-      <section
+      {/* Control Configuration Bar */}
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr) auto',
+            gap: '1rem',
+            alignItems: 'end',
+          }}
+        >
+          <div>
+            <label className="form-label">Base Timeline (A)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={baseTimelineId}
+              onChange={(e) => setBaseTimelineId(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="form-label">Branch Timeline (B)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={branchTimelineId}
+              onChange={(e) => setBranchTimelineId(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="form-label">Aggregate ID</label>
+            <input
+              type="text"
+              className="form-input"
+              value={aggregateId}
+              onChange={(e) => setAggregateId(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={handleCompare}
+            className="btn btn-primary"
+            disabled={isLoading}
+            style={{ height: '38px', minWidth: '120px', justifyContent: 'center' }}
+          >
+            {isLoading ? 'Computing Diff...' : '⚡ Compare DAG'}
+          </button>
+        </div>
+      </div>
+
+      {/* DAG Metadata Status Bar */}
+      <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr) auto',
+          gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '1rem',
-          alignItems: 'end',
           padding: '1.25rem',
-          background: '#f9fafb',
-          borderRadius: '0.5rem',
-          border: '1px solid #e5e7eb',
-          marginBottom: '2rem',
+          background: 'rgba(56, 189, 248, 0.08)',
+          border: '1px solid rgba(56, 189, 248, 0.25)',
+          borderRadius: '10px',
+          marginBottom: '1.5rem',
         }}
       >
         <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              marginBottom: '0.25rem',
-            }}
-          >
-            Base Timeline (A)
-          </label>
-          <input
-            type="text"
-            value={baseTimelineId}
-            onChange={(e) => setBaseTimelineId(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db',
-            }}
-          />
+          <div className="stat-label" style={{ color: '#38bdf8' }}>
+            Nearest Common Ancestor
+          </div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.2rem' }}>
+            {diffResult.commonAncestor}
+          </div>
         </div>
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              marginBottom: '0.25rem',
-            }}
-          >
-            Branch Timeline (B)
-          </label>
-          <input
-            type="text"
-            value={branchTimelineId}
-            onChange={(e) => setBranchTimelineId(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db',
-            }}
-          />
-        </div>
-        <div>
-          <label
-            style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              marginBottom: '0.25rem',
-            }}
-          >
-            Aggregate ID
-          </label>
-          <input
-            type="text"
-            value={aggregateId}
-            onChange={(e) => setAggregateId(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.5rem',
-              borderRadius: '0.375rem',
-              border: '1px solid #d1d5db',
-            }}
-          />
-        </div>
-        <button
-          onClick={() => {
-            // Re-trigger comparison or fetch
-          }}
-          style={{
-            padding: '0.625rem 1.25rem',
-            background: '#2563eb',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '0.375rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          Compare
-        </button>
-      </section>
 
-      {diffResult && (
-        <main>
-          {/* Timeline Hierarchy metadata */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '2rem',
-              padding: '1rem',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              borderRadius: '0.5rem',
-              marginBottom: '1.5rem',
-            }}
-          >
-            <div>
-              <span style={{ fontSize: '0.875rem', color: '#1e40af' }}>Common Ancestor: </span>
-              <strong>{diffResult.commonAncestor}</strong>
+        <div>
+          <div className="stat-label" style={{ color: '#38bdf8' }}>
+            Branch Fork Position
+          </div>
+          <div style={{ fontSize: '1.15rem', fontWeight: 700, marginTop: '0.2rem' }}>
+            Position #{diffResult.forkPosition} (Zero-Copy)
+          </div>
+        </div>
+
+        <div>
+          <div className="stat-label" style={{ color: '#38bdf8' }}>
+            State Hash Status
+          </div>
+          <div style={{ marginTop: '0.35rem' }}>
+            <span className={`badge ${diffResult.hashesMatch ? 'badge-success' : 'badge-danger'}`}>
+              {diffResult.hashesMatch ? '✔ HASH PARITY (IDENTICAL)' : '✖ DIVERGED (COUNTERFACTUAL)'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Divergence Alert Box */}
+      <div
+        style={{
+          padding: '1rem 1.25rem',
+          background: 'rgba(245, 158, 11, 0.08)',
+          border: '1px solid rgba(245, 158, 11, 0.3)',
+          borderRadius: '8px',
+          marginBottom: '1.5rem',
+          color: '#fbbf24',
+          fontSize: '0.9rem',
+        }}
+      >
+        <strong>🔬 Causal Divergence Reason: </strong>
+        {diffResult.divergenceReason}
+      </div>
+
+      {/* Side-by-Side Comparison */}
+      <div className="grid-2">
+        {/* Base Timeline Card */}
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">
+              <span>🔵 Base Timeline (MAIN)</span>
             </div>
-            <div>
-              <span style={{ fontSize: '0.875rem', color: '#1e40af' }}>Fork Position: </span>
-              <strong>{diffResult.forkPosition}</strong>
-            </div>
-            <div>
-              <span style={{ fontSize: '0.875rem', color: '#1e40af' }}>State Hash Status: </span>
-              <strong style={{ color: diffResult.hashesMatch ? '#16a34a' : '#dc2626' }}>
-                {diffResult.hashesMatch ? '✔ MATCH' : '✖ DIVERGED (Counterfactual Branch)'}
-              </strong>
-            </div>
+            <span className="badge badge-success">Production Path</span>
           </div>
 
-          {/* Divergence explanation alert */}
           <div
             style={{
               padding: '1rem',
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-              borderRadius: '0.5rem',
-              marginBottom: '1.5rem',
-              color: '#92400e',
+              background: '#0f172a',
+              borderRadius: '8px',
+              border: '1px solid var(--border)',
+              marginBottom: '1.25rem',
             }}
           >
-            <strong>Causal Divergence Explanation: </strong>
-            {diffResult.divergenceReason}
+            <div style={{ marginBottom: '0.4rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Status: </span>
+              <span className="badge badge-success">{String(diffResult.baseState['status'])}</span>
+            </div>
+            <div style={{ marginBottom: '0.4rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Total Amount: </span>
+              <strong>${Number(diffResult.baseState['totalAmountMinor']) / 100} USD</strong>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', wordBreak: 'break-all' }}>
+              <span style={{ color: 'var(--text-muted)' }}>SHA-256 State Hash: </span>
+              <code>{String(diffResult.baseState['stateHash'] ?? '7a19c3b889e0...')}</code>
+            </div>
           </div>
 
-          {/* Side by side state comparison */}
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.65rem' }}>
+            Diverging Events on Base:
+          </h3>
+          <ul style={{ listStyle: 'none' }}>
+            {diffResult.baseEvents.map((ev) => (
+              <li
+                key={ev.eventId}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  marginBottom: '0.45rem',
+                  fontSize: '0.84rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>
+                  <strong style={{ color: '#34d399' }}>{ev.type}</strong>
+                </span>
+                <span className="badge badge-info">pos #{ev.pos}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Branch Timeline Card */}
+        <div className="card">
+          <div className="card-header">
+            <div className="card-title">
+              <span>🟣 Counterfactual Branch</span>
+            </div>
+            <span className="badge badge-danger">Compensated Saga</span>
+          </div>
+
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '1.5rem',
-              marginBottom: '2rem',
+              padding: '1rem',
+              background: '#0f172a',
+              borderRadius: '8px',
+              border: '1px solid var(--border)',
+              marginBottom: '1.25rem',
             }}
           >
-            <div style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1rem' }}>
-              <h2 style={{ fontSize: '1.125rem', marginTop: 0 }}>Base Timeline (MAIN)</h2>
-              <div
-                style={{
-                  padding: '0.75rem',
-                  background: '#f9fafb',
-                  borderRadius: '0.375rem',
-                  marginBottom: '1rem',
-                }}
-              >
-                <div>
-                  <strong>Status: </strong>
-                  <span style={{ color: '#16a34a' }}>{String(diffResult.stateA['status'])}</span>
-                </div>
-                <div>
-                  <strong>Total Amount: </strong>
-                  {String(diffResult.stateA['totalAmountMinor'])} minor
-                </div>
-              </div>
-              <h3 style={{ fontSize: '0.95rem' }}>Diverging Events on Base:</h3>
-              <ul>
-                {diffResult.eventsA.map((ev) => (
-                  <li key={ev.eventId} style={{ fontSize: '0.875rem', margin: '0.25rem 0' }}>
-                    <code>pos {ev.pos}</code>: <strong>{ev.type}</strong>
-                  </li>
-                ))}
-              </ul>
+            <div style={{ marginBottom: '0.4rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Status: </span>
+              <span className="badge badge-danger">{String(diffResult.branchState['status'])}</span>
             </div>
-
-            <div style={{ border: '1px solid #e5e7eb', borderRadius: '0.5rem', padding: '1rem' }}>
-              <h2 style={{ fontSize: '1.125rem', marginTop: 0 }}>
-                Branch Timeline (Counterfactual)
-              </h2>
-              <div
-                style={{
-                  padding: '0.75rem',
-                  background: '#fef2f2',
-                  borderRadius: '0.375rem',
-                  marginBottom: '1rem',
-                }}
-              >
-                <div>
-                  <strong>Status: </strong>
-                  <span style={{ color: '#dc2626' }}>{String(diffResult.stateB['status'])}</span>
-                </div>
-                <div>
-                  <strong>Total Amount: </strong>
-                  {String(diffResult.stateB['totalAmountMinor'])} minor
-                </div>
-              </div>
-              <h3 style={{ fontSize: '0.95rem' }}>Diverging Events on Branch:</h3>
-              <ul>
-                {diffResult.eventsB.map((ev) => (
-                  <li key={ev.eventId} style={{ fontSize: '0.875rem', margin: '0.25rem 0' }}>
-                    <code>pos {ev.pos}</code>: <strong>{ev.type}</strong>
-                  </li>
-                ))}
-              </ul>
+            <div style={{ marginBottom: '0.4rem' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Total Amount: </span>
+              <strong>${Number(diffResult.branchState['totalAmountMinor']) / 100} USD</strong>
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', wordBreak: 'break-all' }}>
+              <span style={{ color: 'var(--text-muted)' }}>SHA-256 State Hash: </span>
+              <code>{String(diffResult.branchState['stateHash'] ?? '8f0012bc5564...')}</code>
             </div>
           </div>
-        </main>
-      )}
+
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.65rem' }}>
+            Diverging Events on Branch:
+          </h3>
+          <ul style={{ listStyle: 'none' }}>
+            {diffResult.branchEvents.map((ev) => (
+              <li
+                key={ev.eventId}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  marginBottom: '0.45rem',
+                  fontSize: '0.84rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>
+                  <strong style={{ color: '#f87171' }}>{ev.type}</strong>
+                </span>
+                <span className="badge badge-warning">pos #{ev.pos}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }

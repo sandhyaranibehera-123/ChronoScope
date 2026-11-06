@@ -1,11 +1,18 @@
 import cors from '@fastify/cors';
 import fp from 'fastify-plugin';
 import type { FastifyInstance } from 'fastify';
-import { getEnv } from '../config/env.js';
 
 export default fp(async function corsPlugin(app: FastifyInstance) {
-  const env = getEnv();
   await app.register(cors, {
-    origin: env.NODE_ENV === 'production' ? false : true,
+    origin: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-request-id',
+      'x-idempotency-key',
+      'x-command-id',
+    ],
+    credentials: true,
   });
 });
